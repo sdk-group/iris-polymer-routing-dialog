@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 
 <dom-module id="iris-routing-dialog">
@@ -7,23 +8,99 @@
       :host {
         display: block;
       }
+
+      #dialog {
+        width: 100%;
+        top: 64px;
+        bottom: 0;
+        margin: 0;
+        border-top: 3px solid #E44E34;
+      }
+
+      .item-list {
+        max-height: 150px;
+        overflow: auto;
+      }
+
+      .dialog-head {
+        text-align: left;
+        font-size: 19px;
+        padding-left: 15px;
+        position: relative;
+        margin-top: 10px;
+      }
+
+      paper-fab {
+        border-radius: 3px;
+        background-color: rgba(0, 0, 0, 0.0);
+        border: 3px solid #6E4D44;
+        color: #6E4D44;
+      }
     </style>
-    <paper-dialog id="dialog">
-      <h2>Header</h2>
-      <paper-dialog-scrollable>
-        Lorem ipsum
-      </paper-dialog-scrollable>
-      <div class="buttons">
-        <paper-button dialog-dismiss>Отмена</paper-button>
-        <paper-button dialog-confirm>Передать</paper-button>
+    <iris-shared-entities value="{{services}}" namespace="services" key="ALL"></iris-shared-entities>
+    <paper-dialog id="dialog" entry-animation="slide-from-left-animation" exit-animation="slide-left-animation">
+      <div class='dialog-head'>
+        <paper-fab class="flat" mini icon="chevron-left" elevation="0" on-click="closeList"></paper-fab>
       </div>
+      <paper-input label="Введите услугу"></paper-input>
+
+      <div class="item-list">
+        <paper-listbox selected="{{selectedKey}}">
+          <template id="servicesTempalte" is="dom-repeat" items="[[keys]]">
+            <paper-item>[[getServiceLabel(item)]]</paper-item>
+          </template>
+        </paper-listbox>
+      </div>
+
+      <paper-input label="Введите рабочее место"></paper-input>
+
+      <div class="item-list">
+        <paper-listbox>
+          <template is="dom-repeat" items="[[getWorkstations(serviceID)]]">
+            <paper-item>[[getWorkstationLabel(item)]]</paper-item>
+          </template>
+        </paper-listbox>
+      </div>
+
     </paper-dialog>
   </template>
   <script>
     Polymer({
       is: 'iris-routing-dialog',
-      show() {
+      properties: {
+        serviceID: {
+          type: String,
+          computed: "_getServiceID(selectedKey)"
+        },
+        keys: {
+          type: Array,
+          computed: "_buildKeys(routs)"
+        },
+        routs: {
+          type: Object
+        }
+      },
+      _buildKeys(routs) {
+        return _.keys(routs)
+      },
+      _getServiceID(selectedKey) {
+        return this.$.servicesTempalte.items[selectedKey]
+      },
+      show(routs) {
+        // this.selectedKey = undefined;
+        // this.selectedWorkstation = undefined;
+        this.routs = routs;
         this.$.dialog.open();
+      },
+      getServiceLabel(id) {
+        return this.services[id] ? this.services[id].label : '';
+      },
+      getWorkstations(serviceID) {
+        console.log(this.routs[serviceID]);
+        return this.routs[serviceID]
+      },
+      getWorkstationLabel(item) {
+        return item;
       }
 
     });
