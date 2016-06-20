@@ -1,0 +1,31 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+
+<dom-module id="iris-routing-dialog">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <paper-dialog id="dialog">
+      <h2>Header</h2>
+      <paper-dialog-scrollable>
+        Lorem ipsum
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Отмена</paper-button>
+        <paper-button dialog-confirm>Передать</paper-button>
+      </div>
+    </paper-dialog>
+  </template>
+  <script>
+    Polymer({
+      is: 'iris-routing-dialog',
+      show() {
+        this.$.dialog.open();
+      }
+
+    });
+  </script>
+</dom-module>
