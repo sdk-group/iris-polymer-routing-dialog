@@ -17,11 +17,6 @@
         border-top: 3px solid #E44E34;
       }
 
-      .item-list {
-        max-height: 150px;
-        overflow: auto;
-      }
-
       .dialog-head {
         text-align: left;
         font-size: 19px;
@@ -36,32 +31,77 @@
         border: 3px solid #6E4D44;
         color: #6E4D44;
       }
+
+      #pickers {
+        @apply(--layout-horizontal);
+      }
+
+      #settings-picker {
+        @apply(--layout-flex-2);
+      }
+
+      #ws-picker {
+        @apply(--layout-flex);
+        padding-left: 20px;
+      }
+
+      #dialog {
+        @apply(--layout-vertical);
+      }
+
+      #pickers {
+        @apply(--layout-flex-auto);
+      }
+
+      #pickers> div {
+        @apply(--layout-vertical);
+      }
+
+      paper-listbox {
+        overflow: auto;
+      }
+
+      .buttons {
+        min-height: 40px;
+      }
     </style>
     <iris-shared-entities value="{{services}}" namespace="services" key="ALL"></iris-shared-entities>
+
     <paper-dialog id="dialog" entry-animation="slide-from-left-animation" exit-animation="slide-left-animation">
       <div class='dialog-head'>
         <paper-fab class="flat" mini icon="chevron-left" elevation="0" on-click="closeList"></paper-fab>
       </div>
-      <paper-input label="Введите услугу"></paper-input>
+      <div id="pickers">
+        <div id="settings-picker">
+          <div>
+            Передача на услугу: [[getServiceLabel(serviceID)]]
+          </div>
+          <paper-input label="Введите услугу" value="{{serviceFilter}}"></paper-input>
+          <paper-listbox selected="{{serviceID}}" attr-for-selected="data">
+            <template id="servicesTempalte" is="dom-repeat" items="[[filterServices(keys,serviceFilter)]]">
+              <paper-item data$="[[item.id]]">[[item.label]]</paper-item>
+            </template>
+          </paper-listbox>
 
-      <div class="item-list">
-        <paper-listbox selected="{{selectedKey}}">
-          <template id="servicesTempalte" is="dom-repeat" items="[[keys]]">
-            <paper-item>[[getServiceLabel(item)]]</paper-item>
-          </template>
-        </paper-listbox>
+        </div>
+        <div id="ws-picker">
+          <div>
+            Передача на рабочее место: [[workstationsText(selectedWorkstations,selectedWorkstations.length)]]
+          </div>
+
+          <paper-input label="Введите рабочее место"></paper-input>
+
+          <paper-listbox multi selected-values="{{selectedWorkstations}}" attr-for-selected="data">
+            <template is="dom-repeat" items="[[getWorkstations(serviceID)]]">
+              <paper-item data$="[[item]]">[[getWorkstationLabel(item)]]</paper-item>
+            </template>
+          </paper-listbox>
+        </div>
       </div>
-
-      <paper-input label="Введите рабочее место"></paper-input>
-
-      <div class="item-list">
-        <paper-listbox>
-          <template is="dom-repeat" items="[[getWorkstations(serviceID)]]">
-            <paper-item>[[getWorkstationLabel(item)]]</paper-item>
-          </template>
-        </paper-listbox>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm>Accept</paper-button>
       </div>
-
     </paper-dialog>
   </template>
   <script>
@@ -69,40 +109,48 @@
       is: 'iris-routing-dialog',
       properties: {
         serviceID: {
-          type: String,
-          computed: "_getServiceID(selectedKey)"
+          type: String
         },
         keys: {
           type: Array,
-          computed: "_buildKeys(routs)"
+          computed: " _buildKeys(routs) "
         },
         routs: {
           type: Object
         }
       },
       _buildKeys(routs) {
-        return _.keys(routs)
+        return _.map(_.keys(routs), key => {
+          return {
+            id: key,
+            label: this.getServiceLabel(key)
+          }
+        });
       },
-      _getServiceID(selectedKey) {
-        return this.$.servicesTempalte.items[selectedKey]
+      filterServices(items, filter) {
+        return _.filter(items, item => ~item.label.indexOf(filter))
       },
-      show(routs) {
+      show(routs, ticket) {
         // this.selectedKey = undefined;
-        // this.selectedWorkstation = undefined;
+        this.selectedWorkstations = false;
         this.routs = routs;
+        this.serviceID = ticket.service;
+
         this.$.dialog.open();
       },
       getServiceLabel(id) {
+        console.log(id);
         return this.services[id] ? this.services[id].label : '';
       },
       getWorkstations(serviceID) {
-        console.log(this.routs[serviceID]);
         return this.routs[serviceID]
       },
       getWorkstationLabel(item) {
         return item;
+      },
+      workstationsText(selectedWorkstations) {
+        return _.isEmpty(selectedWorkstations) ? 'Все доступные' : _.map(selectedWorkstations, ws => this.getWorkstationLabel(ws)).join(',')
       }
-
     });
   </script>
 </dom-module>
