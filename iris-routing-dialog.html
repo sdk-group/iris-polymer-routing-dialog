@@ -61,6 +61,10 @@
       paper-listbox {
         overflow: auto;
       }
+
+      paper-item[disabled] {
+        color: #ccc;
+      }
     </style>
     <iris-shared-entities value="{{services}}" namespace="services" key="ALL"></iris-shared-entities>
 
@@ -83,16 +87,16 @@
           <paper-input label="Введите услугу" value="{{serviceFilter}}"></paper-input>
           <paper-listbox selected="{{serviceID}}" attr-for-selected="data">
             <template id="servicesTempalte" is="dom-repeat" items="[[filterServices(keys,serviceFilter)]]">
-              <paper-item data="[[item.id]]">[[item.label]]</paper-item>
+              <paper-item disabled$="[[item.disabled]]" data="[[item.id]]">[[item.label]]</paper-item>
             </template>
           </paper-listbox>
         </div>
 
         <div class="right" id="ws-picker">
-          <paper-input label="Введите рабочее место"></paper-input>
+          <paper-input label="Введите рабочее место" value="{{workstationFilter}}"></paper-input>
           <paper-listbox multi selected-values="{{selectedWorkstations}}" attr-for-selected="data">
-            <template is="dom-repeat" items="[[getWorkstations(serviceID)]]">
-              <paper-item data="[[item]]">[[getWorkstationLabel(item)]]</paper-item>
+            <template is="dom-repeat" items="[[getWorkstations(serviceID,workstationFilter)]]">
+              <paper-item data="[[item.id]]">[[item.label]]</paper-item>
             </template>
           </paper-listbox>
         </div>
@@ -110,27 +114,38 @@
         },
         keys: {
           type: Array,
-          computed: " _buildKeys(routs) "
+          computed: " _buildKeys(routes) "
         },
-        routs: {
+        routes: {
           type: Object
         }
       },
-      _buildKeys(routs) {
-        return _.map(_.keys(routs), key => {
+      _buildKeys(routes) {
+        return _.sortBy(_.map(routes, (route, key) => {
           return {
             id: key,
-            label: this.getServiceLabel(key)
+            label: this.getServiceLabel(key),
+            disabled: !route.length
           }
-        });
+        }), ['disabled', 'label']);
       },
       filterServices(items, filter) {
         return _.filter(items, item => ~item.label.indexOf(filter))
       },
-      show(routs, ticket) {
+      show(routing_data, ticket) {
         // this.selectedKey = undefined;
+        let routes = routing_data.available;
+        let rules = routing_data.routes;
+
+        if (rules.allowed == "*") {
+          _.forEach(this.services, service => {
+            let id = service.id;
+            if (!routes[id]) routes[id] = [];
+          });
+        }
+
         this.selectedWorkstations = false;
-        this.routs = routs;
+        this.routes = routes;
         this.serviceID = ticket.service;
 
         this.$.dialog.open();
@@ -143,18 +158,19 @@
       getServiceLabel(id) {
         return this.services[id] ? this.services[id].label : '';
       },
-      getWorkstations(serviceID) {
-        return this.routs[serviceID]
+      getWorkstations(serviceID, filter) {
+        if (!serviceID) return [];
+        let ws = this.routes[serviceID];
+        return _.sortBy(_.filter(ws, item => ~item.label.indexOf(filter)), 'label');
       },
-      getWorkstationLabel(item) {
-        return item;
-      },
+
       workstationsText(selectedWorkstations) {
-        return _.isEmpty(selectedWorkstations) ? 'Все доступные' : _.map(selectedWorkstations, ws => this.getWorkstationLabel(ws)).join(' ,')
+        return _.isEmpty(selectedWorkstations) ? 'Все доступные' : _.map(selectedWorkstations, ws => _.find(this.routes[this.serviceID], ["id", ws]).label).join(', ')
       },
       closeList() {
         this.resolve(false);
         this.$.dialog.close();
+        this.serviceID = false;
       },
       routeTicket() {
         this.resolve({
@@ -162,6 +178,7 @@
           workstation: _.isEmpty(this.selectedWorkstations) ? undefined : this.selectedWorkstations
         });
         this.$.dialog.close();
+        this.serviceID = false;
       }
     });
   </script>
