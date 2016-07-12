@@ -10,6 +10,7 @@
       }
 
       #dialog {
+        @apply(--layout-vertical);
         width: 100%;
         top: 64px;
         bottom: 0;
@@ -46,10 +47,6 @@
         padding-left: 20px;
       }
 
-      #dialog {
-        @apply(--layout-vertical);
-      }
-
       #main {
         @apply(--layout-flex-auto);
       }
@@ -68,7 +65,7 @@
     </style>
     <iris-shared-entities value="{{services}}" namespace="services" key="ALL"></iris-shared-entities>
 
-    <paper-dialog id="dialog" entry-animation="slide-from-left-animation" exit-animation="slide-left-animation">
+    <paper-dialog id="dialog" entry-animation="slide-from-left-animation" exit-animation="slide-left-animation" on-iron-overlay-canceled="closeList">
       <div class='dialog-head'>
         <paper-fab class="flat" mini icon="chevron-left" elevation="0" on-tap="closeList"></paper-fab>
         <paper-fab class="flat" mini icon="chevron-right" elevation="0" on-tap="routeTicket"></paper-fab>
@@ -79,7 +76,6 @@
         </div>
         <div class="right">
           Передача на рабочее место: [[workstationsText(selectedWorkstations,selectedWorkstations.length)]]
-
         </div>
       </div>
       <div id="main" class="picker-cols">
@@ -130,7 +126,7 @@
         }), ['disabled', 'label']);
       },
       filterServices(items, filter) {
-        return _.filter(items, item => ~item.label.indexOf(filter))
+        return _.filter(items, item => ~item.label.toLowerCase().indexOf(filter.toLowerCase()))
       },
       show(routing_data, ticket) {
         // this.selectedKey = undefined;
@@ -144,7 +140,7 @@
           });
         }
 
-        this.selectedWorkstations = false;
+        this.selectedWorkstations = [];
         this.routes = routes;
         this.serviceID = ticket.service;
 
@@ -161,9 +157,8 @@
       getWorkstations(serviceID, filter) {
         if (!serviceID) return [];
         let ws = this.routes[serviceID];
-        return _.sortBy(_.filter(ws, item => ~item.label.indexOf(filter)), 'label');
+        return _.sortBy(_.filter(ws, item => ~item.label.toLowerCase().indexOf(filter.toLowerCase())), 'label');
       },
-
       workstationsText(selectedWorkstations) {
         return _.isEmpty(selectedWorkstations) ? 'Все доступные' : _.map(selectedWorkstations, ws => _.find(this.routes[this.serviceID], ["id", ws]).label).join(', ')
       },
