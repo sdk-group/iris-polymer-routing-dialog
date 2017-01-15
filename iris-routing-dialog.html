@@ -118,13 +118,15 @@
         }
       },
       _buildKeys(routes) {
-        return _.sortBy(_.map(routes, (route, key) => {
+        let keys = _.sortBy(_.map(routes, (route, key) => {
           return {
             id: key,
             label: this.getServiceLabel(key),
             disabled: !route.length
           }
         }), ['disabled', 'label']);
+
+        return keys;
       },
       filterServices(items, filter) {
         return _.filter(items, item => ~ item.label.toLowerCase().indexOf(filter.toLowerCase()))
@@ -142,7 +144,6 @@
             }
           );
         }
-
         this.selectedWorkstations = [];
         this.routes = routes;
         this.serviceID = ticket.service;
@@ -155,20 +156,18 @@
         })
       },
       getServiceLabel(id) {
-        return this.services[id]
-          ? this.services[id].label
-          : '';
+        return _.get(this.services, [id, 'label']) || '';
       },
       getWorkstations(serviceID, filter) {
         if (!serviceID)
           return [];
         let ws = this.routes[serviceID];
-        return _.sortBy(_.filter(ws, item => ~ item.label.toLowerCase().indexOf(filter.toLowerCase())), 'label');
+        return _.sortBy(_.filter(ws, item => item.label && ~ item.label.toLowerCase().indexOf(filter.toLowerCase())), 'label');
       },
       workstationsText(selectedWorkstations) {
         return _.isEmpty(selectedWorkstations)
           ? 'Все доступные'
-          : _.map(selectedWorkstations, ws => _.find(this.routes[this.serviceID], ["id", ws]).label).join(', ')
+          : _.map(selectedWorkstations, ws => (_.find(this.routes[this.serviceID], ["id", ws]) || {}).label).join(', ')
       },
       closeList() {
         this.resolve(false);
